@@ -52,8 +52,8 @@ function scaling_coefficients(f::Function, side::DWT.Side, w::DWT.DiscreteWavele
 end
 
 # Function on the interval [a,b] to samples
-function scaling_coefficients(f::Function, s::CompactSequence{T}, L::Int, fembedding; options...) where {T}
-      x = linspace(T(0), T(1), 1<<L + 1)[1:end-1]
+function scaling_coefficients(f::Function, s::CompactInfiniteVector{T}, L::Int, fembedding; options...) where {T}
+      x = LinRange(T(0), T(1), 1<<L + 1)[1:end-1]
       fcoefs = map(f, x)
       @assert eltype(fcoefs)==T
       filter = _scalingcoefficient_filter(s)
@@ -66,28 +66,28 @@ scaling_coefficients(f::AbstractArray, s::Side, w::DiscreteWavelet{T}, bnd::Peri
     scaling_coefficients(f, _scalingcoefficient_filter(filter(inv(s), Scl(), w)), PeriodicEmbedding(); options...)
 
 # function samples to scaling coeffients
-function scaling_coefficients(f::AbstractArray, filter::CompactSequence{T}, fembedding; n::Int=length(f), options...) where {T}
+function scaling_coefficients(f::AbstractArray, filter::CompactInfiniteVector{T}, fembedding; n::Int=length(f), options...) where {T}
       @assert isdyadic(f)
-      c = (VERSION<v"0.7-") ? Array{T}(n) : Array{T}(undef, n)
+      c = Array{T}(undef, n)
       scaling_coefficients!(c, f, filter, fembedding; options...)
       c
 end
 
 "In place method of scaling_coefficients"
-function scaling_coefficients!(c, f, filter::CompactSequence{T}, fembedding; offset::Int=0, options...) where {T}
+function scaling_coefficients!(c, f, filter::CompactInfiniteVector{T}, fembedding; offset::Int=0, options...) where {T}
     # TODO write a convolution function
     # convolution between low pass filter and function values gives approximation of scaling coefficients
     for j in offset:offset+length(c)-1
         ci = zero(T)
-        for l in firstindex(filter):lastindex(filter)
+        for l in _firstindex(filter):_lastindex(filter)
             ci += filter[l]*fembedding[f, j-l]
         end
         c[j+1-offset] = T(1)/T(sqrt(length(f)))*ci
     end
 end
 
-_scalingcoefficient_filter(f::CompactSequence) =
-    reverse(CompactSequence(recursion_algorithm(f, 0), f.offset))
+_scalingcoefficient_filter(f::CompactInfiniteVector) =
+    reverse(CompactInfiniteVector(recursion_algorithm(f, 0), f.offset))
 
 "Transforms scaling coeffients back to function evaluations on the dyadic grid."
 function scaling_coefficients_to_dyadic_grid(scaling_coefficients::AbstractArray{T,1}, s::Side, w::DWT.DiscreteWavelet{T}, bnd::DWT.PeriodicBoundary, d=ndyadicscales(scaling_coefficients); grid=false, options...) where {T}
@@ -99,7 +99,7 @@ function scaling_coefficients_to_dyadic_grid(scaling_coefficients::AbstractArray
 
     scaling_coefficients_to_dyadic_grid!(function_evals, scaling_coefficients, w, bnd, f, f_scaled, scratch; options...)
     grid ?
-        (return function_evals, linspace(T(0), T(1), length(function_evals)+1)[1:end-1]) :
+        (return function_evals, LinRange(T(0), T(1), length(function_evals)+1)[1:end-1]) :
         (return function_evals)
 end
 

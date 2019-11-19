@@ -1,4 +1,4 @@
-using WaveletsCopy
+using WaveletsEvaluation
 
 CREATE_README = false
 include("suite_dwtstep.jl")

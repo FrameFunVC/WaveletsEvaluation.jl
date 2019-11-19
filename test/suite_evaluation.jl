@@ -1,19 +1,8 @@
 # test_evaluation.jl
 
-using WaveletsCopy
-WaveletsCopy = WaveletsCopy
-using QuadGK
-using CardinalBSplines
-using WaveletsCopy.Sequences
-using WaveletsCopy.Filterbanks
-
-if VERSION < v"0.7-"
-    using Base.Test
-else
-    using Test, LinearAlgebra
-    linspace(a,b,c) = range(a, stop=b, length=c)
-end
-
+using WaveletsEvaluation, QuadGK, CardinalBSplines, WaveletsEvaluation.Filterbanks, Test, LinearAlgebra
+using CardinalBSplines: evaluate_BSpline
+using InfiniteVectors: _firstindex, _lastindex, subvector, sublength
 
 function pad(s,i=80)
    "$(rpad(s,i))"
@@ -26,10 +15,10 @@ function recursiontest()
     tol = sqrt(eps(T))
     for L in 0:5
       for N in 1:6
-        f = x->evaluate_Bspline(N-1, x+(N>>1), Float64)
+        f = x->evaluate_BSpline(Val(N-1), x+(N>>1), Float64)
         h = DWT.CDFWavelet{N,N,T}()
-        x = WaveletsCopy.DWT.dyadicpointsofrecursion(Primal, scaling, h,L)
-        g = WaveletsCopy.DWT.recursion_algorithm(Primal, scaling, h,L)
+        x = WaveletsEvaluation.DWT.dyadicpointsofrecursion(Primal, scaling, h,L)
+        g = WaveletsEvaluation.DWT.recursion_algorithm(Primal, scaling, h,L)
         F = map(f,x)
         @test (norm(g-F))<tol
       end
@@ -51,7 +40,7 @@ function primalfunctiontest()
         @test (norm(g-F))<tol
       end
       w = DWT.HaarWavelet{T}()
-      f = x->WaveletsCopy.DWT.evaluate(Primal, scaling, w, 0, 0, x)
+      f = x->WaveletsEvaluation.DWT.evaluate(Primal, scaling, w, 0, 0, x)
       x = DWT.dyadicpointsofrecursion(Dual, scaling, w,L)
       g = DWT.recursion_algorithm(Primal, scaling, w,L)
       F = map(f,x)
@@ -61,8 +50,8 @@ function primalfunctiontest()
   @testset "$(rpad("closest dyadic point",P))"  begin
     for c in -1:-1:-14
       xtol = 10.0^c
-      for xtest in linspace(-1,2,50)
-        d,k = WaveletsCopy.DWT.closest_dyadic_point(xtest, xtol; dmax=200)
+      for xtest in LinRange(-1,2,50)
+        d,k = WaveletsEvaluation.DWT.closest_dyadic_point(xtest, xtol; dmax=200)
         @test abs(k/(1<<d)-xtest)<xtol
       end
     end
@@ -75,11 +64,11 @@ function scalingtest()
     tol = sqrt(eps(T))
     for w in IMPLEMENTED_WAVELETS
       for L in 4:10
-        c = WaveletsCopy.DWT.scaling_coefficients(x->one(T), w, L, PeriodicEmbedding())
+        c = WaveletsEvaluation.DWT.scaling_coefficients(x->one(T), w, L, PeriodicEmbedding())
         for i in 1:length(c)
           @test (abs(c[i]-2.0^(-L/2)) < tol)
         end
-        c = WaveletsCopy.DWT.scaling_coefficients(x->one(T), DWT.filter(Primal, scaling, w), L, PeriodicEmbedding())
+        c = WaveletsEvaluation.DWT.scaling_coefficients(x->one(T), DWT.filter(Primal, scaling, w), L, PeriodicEmbedding())
         for i in 1:length(c)
           @test (abs(c[i]-2.0^(-L/2)) < tol)
         end
@@ -91,11 +80,11 @@ function scalingtest()
     tol = sqrt(eps(T))
     for w in (DWT.cdf24, DWT.cdf26)
       for L in 4:10
-        c = WaveletsCopy.DWT.scaling_coefficients(x->T(x), w, L, nothing)
+        c = WaveletsEvaluation.DWT.scaling_coefficients(x->T(x), w, L, nothing)
         for i in 0:length(c)-1
           @test abs(c[i+1]-2.0^(-3L/2)*i) < tol
         end
-        c = WaveletsCopy.DWT.scaling_coefficients(x->T(x), DWT.filter(Primal, scaling, w), L, nothing)
+        c = WaveletsEvaluation.DWT.scaling_coefficients(x->T(x), DWT.filter(Primal, scaling, w), L, nothing)
         for i in 0:length(c)-1
           @test abs(c[i+1]-2.0^(-3L/2)*i) < tol
         end
@@ -107,7 +96,7 @@ function scalingtest()
     tol = sqrt(eps(T))
     for w in (DWT.cdf24, DWT.cdf26)
       for L in 4:10
-        c = WaveletsCopy.DWT.scaling_coefficients(x->T(1/2*(x+1)), w, L, nothing, -1, 1)
+        c = WaveletsEvaluation.DWT.scaling_coefficients(x->T(1/2*(x+1)), w, L, nothing, -1, 1)
         for i in 0:length(c)-1
           @test abs(c[i+1]-2*2.0^(-3L/2)*i) < tol
         end
@@ -124,16 +113,16 @@ function scalingtest()
         @eval begin
           for w in DWT.$implemented
             if DWT.vanishingmoments(Primal, w) > $k
-              c = WaveletsCopy.DWT.scaling_coefficients(x->$T(x)^$k, DWT.filter(Primal, scaling, w), $L, nothing)
+              c = WaveletsEvaluation.DWT.scaling_coefficients(x->$T(x)^$k, DWT.filter(Primal, scaling, w), $L, nothing)
               s = DWT.support(Primal, scaling, w)
               nodes = [s[1]:s[2]...]/2
               if iseven(DWT.vanishingmoments(Primal, w)) && isodd($k)
                 c1_c=0; c1_c_e = 0
               else
-                c1_c, c1_c_e = QuadGK.quadgk(x->sqrt($T(2))*WaveletsCopy.DWT.evaluate(Primal, scaling, w, 0, 0, 2*x)*x^$k, nodes...)
+                c1_c, c1_c_e = QuadGK.quadgk(x->sqrt($T(2))*WaveletsEvaluation.DWT.evaluate(Primal, scaling, w, 0, 0, 2*x)*x^$k, nodes...)
               end
               nodes = nodes .+ .5
-              c2_c, c2_c_e = QuadGK.quadgk(x->sqrt($T(2))*WaveletsCopy.DWT.evaluate(Primal, scaling, w, 0, 0, 2*x-1)*x^$k, nodes...)
+              c2_c, c2_c_e = QuadGK.quadgk(x->sqrt($T(2))*WaveletsEvaluation.DWT.evaluate(Primal, scaling, w, 0, 0, 2*x-1)*x^$k, nodes...)
               @test (norm(c[1]-c1_c) < $tol)
               @test (norm(c[2]-c2_c) < $tol)
             end
@@ -182,10 +171,10 @@ function supporttest()
     for w in (DWT.IMPLEMENTED_CDF_WAVELETS..., DWT.IMPLEMENTED_DB_WAVELETS...)
       f = DWT.filter(Primal, scaling, w)
       s = DWT.support(Primal, scaling, w)
-      @test ((firstindex(f), lastindex(f)) == s)
+      @test ((_firstindex(f), _lastindex(f)) == s)
       f = DWT.filter(Dual, scaling, w)
       s = DWT.support(Dual, scaling, w)
-      @test ((firstindex(f), lastindex(f)) == s)
+      @test ((_firstindex(f), _lastindex(f)) == s)
     end
   end
 end
@@ -251,37 +240,37 @@ function implementation_test()
     @test DWT.name(DWT.Dual) == "dual"
     print_implemented_wavelets()
     print_all_implemented_wavelets()
-    @test DWT.is_symmetric(DWT.TestWavelet{Float16}) == False
-    @test DWT.is_biorthogonal(DWT.TestWavelet{Float16}) == False
-    @test DWT.is_orthogonal(DWT.TestWavelet{Float16}) == False
-    @test DWT.is_semiorthogonal(DWT.TestWavelet{Float16}) == False
+    @test DWT.is_symmetric(DWT.TestWavelet{Float16}) == Val(false)
+    @test DWT.is_biorthogonal(DWT.TestWavelet{Float16}) == Val(false)
+    @test DWT.is_orthogonal(DWT.TestWavelet{Float16}) == Val(false)
+    @test DWT.is_semiorthogonal(DWT.TestWavelet{Float16}) == Val(false)
     @test eltype(DWT.TestWavelet{Float16}) == Float16
     @test_throws String vanishingmoments(Primal, DWT.TestWavelet)
-    @test DWT.is_biorthogonal(DWT.cdf11)==True()
-    @test DWT.is_biorthogonal(DWT.db4)==True()
-    @test DWT.is_orthogonal(DWT.db1)==True()
-    @test DWT.is_semiorthogonal(DWT.db5)==True()
-    @test DWT.is_symmetric(DWT.cdf11)==True()
-    @test DWT.is_symmetric(DWT.cdf33)==True()
-    @test DWT.is_symmetric(DWT.db1)==True()
-    @test DWT.is_biorthogonal(DWT.CDFWavelet{1,1,Float16})==True
-    @test DWT.is_biorthogonal(DWT.DaubechiesWavelet{1,Float64})==True
-    @test DWT.is_orthogonal(DWT.DaubechiesWavelet{1,Float16})==True
-    @test DWT.is_semiorthogonal(DWT.DaubechiesWavelet{1,Float64})==True
-    @test DWT.is_symmetric(DWT.CDFWavelet{1,1,Float16})==True
-    @test DWT.is_symmetric(DWT.CDFWavelet{3,3,Float16})==True
-    @test DWT.is_symmetric(DWT.DaubechiesWavelet{1,Float16})==True
+    @test DWT.is_biorthogonal(DWT.cdf11)==Val(true)
+    @test DWT.is_biorthogonal(DWT.db4)==Val(true)
+    @test DWT.is_orthogonal(DWT.db1)==Val(true)
+    @test DWT.is_semiorthogonal(DWT.db5)==Val(true)
+    @test DWT.is_symmetric(DWT.cdf11)==Val(true)
+    @test DWT.is_symmetric(DWT.cdf33)==Val(true)
+    @test DWT.is_symmetric(DWT.db1)==Val(true)
+    @test DWT.is_biorthogonal(DWT.CDFWavelet{1,1,Float16})==Val(true)
+    @test DWT.is_biorthogonal(DWT.DaubechiesWavelet{1,Float64})==Val(true)
+    @test DWT.is_orthogonal(DWT.DaubechiesWavelet{1,Float16})==Val(true)
+    @test DWT.is_semiorthogonal(DWT.DaubechiesWavelet{1,Float64})==Val(true)
+    @test DWT.is_symmetric(DWT.CDFWavelet{1,1,Float16})==Val(true)
+    @test DWT.is_symmetric(DWT.CDFWavelet{3,3,Float16})==Val(true)
+    @test DWT.is_symmetric(DWT.DaubechiesWavelet{1,Float16})==Val(true)
     @test DWT.name(DWT.db1) == "db1"
     @test DWT.name(DWT.DaubechiesWavelet{1,Float16}()) == "db1_Float16"
     @test DWT.name(DWT.cdf11) == "cdf11"
     @test DWT.name(DWT.cdf11_Float16) == "cdf11_Float16"
     @test DWT.class(DWT.db1)[end-27:end] == "DaubechiesWavelet{1,Float64}"
     @test DWT.class(DWT.cdf11)[end-22:end] == "CDFWavelet{1,1,Float64}"
-    @test DWT.dyadicpointsofrecursion(Primal, scaling, DWT.cdf11,1,0,0)≈linspace(0,0,1)
-    @test DWT.dyadicpointsofrecursion(Primal, scaling, DWT.cdf13,1,1,3)≈linspace(.5,1,5)
-    @test DWT.dyadicpointsofrecursion(Primal, DWT.wavelet, DWT.cdf13,1,1,3)≈linspace(0,1.5,13)
-    @test DWT.dyadicpointsofrecursion(Dual, scaling, DWT.cdf13,1,1,3)≈linspace(-.5,2,21)
-    @test DWT.dyadicpointsofrecursion(Dual, DWT.wavelet, DWT.cdf13,1,1,3)≈linspace(0,1.5,13)
+    @test DWT.dyadicpointsofrecursion(Primal, scaling, DWT.cdf11,1,0,0)≈LinRange(0,0,1)
+    @test DWT.dyadicpointsofrecursion(Primal, scaling, DWT.cdf13,1,1,3)≈LinRange(.5,1,5)
+    @test DWT.dyadicpointsofrecursion(Primal, DWT.wavelet, DWT.cdf13,1,1,3)≈LinRange(0,1.5,13)
+    @test DWT.dyadicpointsofrecursion(Dual, scaling, DWT.cdf13,1,1,3)≈LinRange(-.5,2,21)
+    @test DWT.dyadicpointsofrecursion(Dual, DWT.wavelet, DWT.cdf13,1,1,3)≈LinRange(0,1.5,13)
     @test norm(DWT.evaluate_in_dyadic_points(Dual, DWT.wavelet, DWT.cdf24,1,3,4)-[0.0,8.3234e-6,0.000177566,-0.0014307,0.00378807,0.00350662,
                                                                   -0.0305216,0.0262683,0.0808122,-0.0458831,0.0762876,-0.206873,
                                                                     -0.61956,0.20897,0.306045,1.09198,2.39743,0.456957,-0.351988,
@@ -332,13 +321,13 @@ function implementation_test()
         DWT.evaluate_periodic_in_dyadic_points(Dual, DWT.wavelet, DWT.cdf11))<1e-14
 
 
-    @test collect(evaluate_periodic_in_dyadic_points(Dual, scaling, DWT.db1, 0,0,2,points=true)[2]) ≈ collect(linspace(0,1,5)[1:end-1])
-    @test collect(evaluate_periodic_in_dyadic_points(Dual, DWT.wavelet, DWT.db1, 0,0,2,points=true)[2]) ≈ collect(linspace(0,1,5)[1:end-1])
-    @test collect(evaluate_in_dyadic_points(Dual, DWT.wavelet, DWT.db1, 0,0,2,points=true)[2])≈collect(linspace(0,1,5))
-    @test collect(evaluate_in_dyadic_points(Dual, DWT.wavelet, DWT.cdf24, 0,0,2,points=true)[2])≈collect(linspace(-2,3,21))
+    @test collect(evaluate_periodic_in_dyadic_points(Dual, scaling, DWT.db1, 0,0,2,points=true)[2]) ≈ collect(LinRange(0,1,5)[1:end-1])
+    @test collect(evaluate_periodic_in_dyadic_points(Dual, DWT.wavelet, DWT.db1, 0,0,2,points=true)[2]) ≈ collect(LinRange(0,1,5)[1:end-1])
+    @test collect(evaluate_in_dyadic_points(Dual, DWT.wavelet, DWT.db1, 0,0,2,points=true)[2])≈collect(LinRange(0,1,5))
+    @test collect(evaluate_in_dyadic_points(Dual, DWT.wavelet, DWT.cdf24, 0,0,2,points=true)[2])≈collect(LinRange(-2,3,21))
     f, points = evaluate_in_dyadic_points(Primal, scaling, DWT.db1, 2,0,1, points=true)
     @test f ≈ [2.]
-    @test collect(points) ≈ collect(linspace(0,0,1))
+    @test collect(points) ≈ collect(LinRange(0,0,1))
     f3, points3 = evaluate_in_dyadic_points(Primal, wavelet, DWT.db3, 2,0,3, points=true)
     f2, points2 = evaluate_in_dyadic_points(Primal, wavelet, DWT.db3, 2,0,2, points=true)
     f1, points1 = evaluate_in_dyadic_points(Primal, wavelet, DWT.db3, 2,0,1, points=true)
@@ -357,7 +346,7 @@ function eval_wavelet_test()
         @test DWT._periodize((-1.25,.5),-1,1)==((.75,1.),(-1.,.5))
         @test DWT._periodize((-1.5,0.),-1,1)==((0.5,1.),(-1,0))
 
-        t = linspace(0,1,4)[1:end-1]
+        t = LinRange(0,1,4)[1:end-1]
         for side in (Primal, Dual)
             for kind in (scaling, DWT.wavelet)
                 @test DWT.in_periodic_support(1,DWT.periodic_support(side,kind, DWT.cdf11, 0,0)...)
@@ -434,14 +423,10 @@ vanishing_moments_test_dual()
 coefficient_util_test()
 
 # # Plot Daubechies wavelets
-if VERSION < v"0.7-"
-    using Plots
-    plot(DWT.cdf11)
-    plot(DWT.db1)
-    plot(DWT.db2,periodic=true)
-end
-
-
+using Plots
+plot(DWT.cdf11)
+plot(DWT.db1)
+plot(DWT.db2,periodic=true)
 
 # using Plots
 # plot(layout=(2,2))
@@ -465,9 +450,9 @@ end
 
 # # Plot spline scaling functions
 # using Plots; plot()
-# x = linspace(-5,5,1000)
+# x = LinRange(-5,5,1000)
 # for i in 1:6
-#   f = x->WaveletsCopy.DWT.evaluate(Primal, scaling, DWT.CDFWavelet{i,i,Float64}(), 0,0,x)
+#   f = x->WaveletsEvaluation.DWT.evaluate(Primal, scaling, DWT.CDFWavelet{i,i,Float64}(), 0,0,x)
 #   ff = map(f, x)
 #   plot!(x, ff)
 # end
@@ -481,17 +466,17 @@ end
 #   isodd(p) && (qs = 1:2:6 )
 #   for q in qs
 #     println(p,q)
-#     f, x = WaveletsCopy.DWT.evaluate_in_dyadic_points(Primal, DWT.wavelet, DWT.CDFWavelet{p,q,Float64}(), j, k, d; points=true)
+#     f, x = WaveletsEvaluation.DWT.evaluate_in_dyadic_points(Primal, DWT.wavelet, DWT.CDFWavelet{p,q,Float64}(), j, k, d; points=true)
 #     plot!(x, -f, subplot=i)
-#     f, x = WaveletsCopy.DWT.evaluate_in_dyadic_points(Primal, scaling, DWT.CDFWavelet{p,q,Float64}(), j, k, d; points=true)
+#     f, x = WaveletsEvaluation.DWT.evaluate_in_dyadic_points(Primal, scaling, DWT.CDFWavelet{p,q,Float64}(), j, k, d; points=true)
 #     plot!(x, f, subplot=i)
 #     i += 1
 #   end
 #   for q in qs
 #     println(p,q,"dual")
-#     # f, x = WaveletsCopy.DWT.evaluate_in_dyadic_points(Dual, DWT.wavelet, DWT.CDFWavelet{p,q,Float64}(), j, k, d; points=true)
+#     # f, x = WaveletsEvaluation.DWT.evaluate_in_dyadic_points(Dual, DWT.wavelet, DWT.CDFWavelet{p,q,Float64}(), j, k, d; points=true)
 #     # plot!(x, -f, subplot=i)
-#     f, x = WaveletsCopy.DWT.evaluate_in_dyadic_points(Dual, scaling, DWT.CDFWavelet{p,q,Float64}(), j, k, d; points=true)
+#     f, x = WaveletsEvaluation.DWT.evaluate_in_dyadic_points(Dual, scaling, DWT.CDFWavelet{p,q,Float64}(), j, k, d; points=true)
 #     plot!(x, f, subplot=i)
 #     i += 1
 #   end
@@ -499,13 +484,13 @@ end
 # plot!()
 
 # using Plots
-# using WaveletsCopy
+# using WaveletsEvaluation
 # w = DWT.CDFWavelet{1,3,Float64}()
 # plot(w; j=0, k=-1, periodic=false)
 # plot(w; side=Dual, j=0, k=-1, periodic=true)
 
 # using Plots
 # f = x-> DWT.evaluate_periodic_Bspline(3, x, 0.75, Float64)
-# x = linspace(-1,2,200)
+# x = LinRange(-1,2,200)
 # ff = map(f, x)
 # plot(x, ff)

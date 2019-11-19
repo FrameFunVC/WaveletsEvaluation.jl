@@ -43,7 +43,7 @@ function evaluate(side::Side, kind::Kind, w::DiscreteWavelet{T}, j::Int, k::Int,
     f[-ceil(Int,s[1]*(1<<d))+kpoint+1]
 end
 
-periodic_dyadic_points(d::Int, ::Type{T}=Float64) where {T} = linspace(T(0),T(1),(1<<d)+1)[1:end-1]
+periodic_dyadic_points(d::Int, ::Type{T}=Float64) where {T} = LinRange(T(0),T(1),(1<<d)+1)[1:end-1]
 
 """
 Periodic evaluation of 2^{j/2}ϕ(2^jx-k) where f is the primal/dual scaling/wavelet function of type `w` in an equispaced grid with separation `2^-d`.
@@ -172,7 +172,7 @@ end
 
 function _evaluate_periodic_scaling_basis_in_dyadic_points!(y, f, s::DWT.Side, w, coeffs, j::Int, d::Int, f_scaled)
     jump = -(1<<(d-j))
-    offset = 1+jump*Sequences.offset(filter(s, scaling, w))
+    offset = 1+jump*InfiniteVectors.offset(filter(s, scaling, w))
     y .= 0
     for k in 0:(1<<j)-1
         f_scaled .= f .* coeffs[k+1]
@@ -250,7 +250,7 @@ function evaluate_in_dyadic_points!(f::AbstractArray{T,1}, side::DWT.Side, kind:
         # and ψ_{j,k}(t_d) = ∑_n d_n ϕ_{j+1,k}(t_d-n)
         scratchlength = length(scratch)
         m = 1<<(d-1-j)
-        for (i,l) in enumerate(firstindex(filter):lastindex(filter))
+        for (i,l) in enumerate(_firstindex(filter):_lastindex(filter))
             offset = m*(i-1)
             f[offset+1:offset+scratchlength] += filter[l]*scratch
         end
@@ -295,12 +295,11 @@ function evaluate_in_dyadic_points!(f::AbstractArray{T,1}, side::Side, kind::Kin
     end
 end
 
-function evaluate_in_dyadic_points!(f::AbstractArray{T,1}, s::CompactSequence{T}, j::Int, k::Int, d::Int; options...) where {T}
+function evaluate_in_dyadic_points!(f::AbstractArray{T,1}, s::CompactInfiniteVector{T}, j::Int, k::Int, d::Int; options...) where {T}
     # Evaluation is done through the recursion_algorithm
 
     @assert length(f) == DWT.recursion_length(s, (d-j))
     recursion_algorithm!(f, s, (d-j); options...)
     rmul!(f,T(2)^(T(j)/2))
-    # scale!(f,T(2)^(T(j)/2))
     nothing
 end

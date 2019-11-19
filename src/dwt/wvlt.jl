@@ -2,20 +2,20 @@ abstract type DiscreteWavelet{T} end
 struct TestWavelet{T} <: DWT.DiscreteWavelet{T} end
 
 # Symmetry trait
-is_symmetric(::Type{W}) where {W <: DiscreteWavelet} = False
+is_symmetric(::Type{W}) where {W <: DiscreteWavelet} = Val(false)
 
 # Orthogonality traits
-is_orthogonal(::Type{W}) where {W <: DiscreteWavelet} = False
-is_biorthogonal(::Type{W}) where {W <: DiscreteWavelet} = False
-is_semiorthogonal(::Type{W}) where {W <: DiscreteWavelet} = False
+is_orthogonal(::Type{W}) where {W <: DiscreteWavelet} = Val(false)
+is_biorthogonal(::Type{W}) where {W <: DiscreteWavelet} = Val(false)
+is_semiorthogonal(::Type{W}) where {W <: DiscreteWavelet} = Val(false)
 # Not sure yet whether this one makes sense:
-#is_semiorthogonal{W <: DiscreteWavelet}(::Type{W}) = False
+#is_semiorthogonal{W <: DiscreteWavelet}(::Type{W}) = Val(false)
 eltype(::Type{DiscreteWavelet{T}}) where {T} = T
 eltype(::Type{W}) where {W <: DiscreteWavelet} = eltype(supertype(W))
 eltype(w::DiscreteWavelet) = eltype(typeof(w))
 
 for op in (:is_symmetric, :is_orthogonal, :is_biorthogonal, :is_semiorthogonal)
-    @eval $op(w::DiscreteWavelet) = $op(typeof(w))()
+    @eval $op(w::DiscreteWavelet) = $op(typeof(w))
 end
 abstract type Kind end
 abstract type Side end
@@ -32,11 +32,9 @@ Base.inv(::Prl) = Dul()
 Base.inv(::Dul) = Prl()
 Base.inv(::Type{Prl}) = Dul
 Base.inv(::Type{Dul}) = Prl
-if !(VERSION < v"0.7-")
-    Base.broadcastable(s::Side) = Ref(s)
-    Base.broadcastable(k::Kind) = Ref(k)
-    Base.broadcastable(w::DiscreteWavelet{T}) where T = Ref(w)
-end
+Base.broadcastable(s::Side) = Ref(s)
+Base.broadcastable(k::Kind) = Ref(k)
+Base.broadcastable(w::DiscreteWavelet{T}) where T = Ref(w)
 
 
 include("util/waveletindex.jl")
@@ -46,12 +44,12 @@ include("util/waveletindex.jl")
 ###############################################################################
 vanishingmoments(::Prl, ::Type{WT})  where {WT <: DiscreteWavelet}= throw("unimplemented")
 vanishingmoments(::Dul, W::Type{WT})  where {WT <: DiscreteWavelet}= _vanishingmoments(Prl(), W, is_orthogonal(W))
-_vanishingmoments(::Prl, W, is_orthogonal::Type{True}) = vanishingmoments(Prl(), W)
+_vanishingmoments(::Prl, W, is_orthogonal::Val{true}) = vanishingmoments(Prl(), W)
 ###############################################################################
 # support/support_length
 ###############################################################################
 support(side::Side, kind::Scl, ::Type{WT})  where {WT <: DiscreteWavelet}=
-    Sequences.support(filter(side, Scl(), WT))
+    InfiniteVectors.support(filter(side, Scl(), WT))
 function support(side::Side, kind::Wvl, ::Type{WT}) where {WT <: DiscreteWavelet}
     l1, r1 = support(side, Scl(), WT)
     l2, r2 = support(inv(side), Scl(), WT)
@@ -71,7 +69,7 @@ filter(side::Side, kind::Wvl, ::Type{W}) where {W<:DiscreteWavelet} = alternatin
 
 # If orthogonal, dual and primal scaling functions are equal
 filter(side::Dul, kind::Scl, ::Type{W}) where {W<:DiscreteWavelet} = _filter(side, kind, W, is_orthogonal(W))
-_filter(::Dul, ::Scl, ::Type{W}, is_orthogonal::Type{True}) where {W<:DiscreteWavelet} = filter(Prl(), Scl(), W)
+_filter(::Dul, ::Scl, ::Type{W}, is_orthogonal::Val{true}) where {W<:DiscreteWavelet} = filter(Prl(), Scl(), W)
 
 # coefficient filter is just, √2 times the scaling filter, overwrite if it can have nice (rational) values
 struct Cof <: Kind end

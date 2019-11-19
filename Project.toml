@@ -1,10 +1,11 @@
-name = "WaveletsCopy"
+name = "WaveletsEvaluation"
 uuid = "56f66b1c-89a8-11e8-2073-09c9ab0369ab"
 authors = ["vincentcp"]
-version = "0.1.1s"
+version = "0.0.1"
 
 [deps]
 CardinalBSplines = "87d49508-7ad8-11e8-0eda-cb6920b58870"
+InfiniteVectors = "a3035606-0d97-52a5-9f37-19f5f67b7424"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"

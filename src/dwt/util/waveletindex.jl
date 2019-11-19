@@ -31,9 +31,9 @@ Base.getindex(list::DWTIndexList, wind::WaveletIndex)::Int = value(wind)
 wavelet_indices(l::Int) = DWTIndexList(l)
 
 """
-  The index ([:scaling/:wavelet], j, k) in the (scaling+wavelet) sequence for coefficient i in a sequence of length n after l dwt synthesis_lowpassfilter
+  The index ([:scaling/:wavelet], j, k) in the (scaling+wavelet) InfiniteVector for coefficient i in a InfiniteVector of length n after l dwt synthesis_lowpassfilter
 
-  For example, the indices of a sequence with 4 elements after
+  For example, the indices of a InfiniteVector with 4 elements after
   0 dwt steps
     (Scl(), 2, 0),    (Scl(), 2, 1),    (Scl(), 2, 2),     (Scl(), 2, 3)
   1 dwt step
@@ -72,26 +72,26 @@ function level(n::Int, i::Int)
 end
 
 """
-`DWaveletsCopycalingIndexList` defines the map from native indices to linear indices
+`DWaveletsEvaluationcalingIndexList` defines the map from native indices to linear indices
 for a finite wavelet basis, when the indices are ordered in the way they
 are expected in the DWT routine.
 """
-struct DWaveletsCopycalingIndexList <: AbstractVector{WaveletIndex}
+struct DWaveletsEvaluationcalingIndexList <: AbstractVector{WaveletIndex}
 	l	::	Int
 end
 
 # Assume linear indexing,
-Base.IndexStyle(list::DWaveletsCopycalingIndexList) = Base.IndexLinear()
+Base.IndexStyle(list::DWaveletsEvaluationcalingIndexList) = Base.IndexLinear()
 
-Base.length(list::DWaveletsCopycalingIndexList) = 1<<list.l
-Base.size(list::DWaveletsCopycalingIndexList) = (1<<list.l,)
+Base.length(list::DWaveletsEvaluationcalingIndexList) = 1<<list.l
+Base.size(list::DWaveletsEvaluationcalingIndexList) = (1<<list.l,)
 
-Base.getindex(m::DWaveletsCopycalingIndexList, idx::Int) ::WaveletIndex = scaling_index(m.l, idx)
+Base.getindex(m::DWaveletsEvaluationcalingIndexList, idx::Int) ::WaveletIndex = scaling_index(m.l, idx)
 
-Base.getindex(list::DWaveletsCopycalingIndexList, wind::WaveletIndex)::Int = scaling_value(wind)
+Base.getindex(list::DWaveletsEvaluationcalingIndexList, wind::WaveletIndex)::Int = scaling_value(wind)
 
 " All wavelet indices on a certain level"
-scaling_indices(l::Int) = DWaveletsCopycalingIndexList(l)
+scaling_indices(l::Int) = DWaveletsEvaluationcalingIndexList(l)
 
 scaling_index(level::Int, index::Int) = (Scl(), level, index-1)
 

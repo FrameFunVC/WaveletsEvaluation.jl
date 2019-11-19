@@ -1,11 +1,6 @@
-if VERSION < v"0.7-"
-    using Base.Test
-else
-    using Test, LinearAlgebra
-    linspace(a,b,c) = range(a, stop=b, length=c)
-end
+using Test, LinearAlgebra
 
-using WaveletsCopy.DWT: quad_trap, quad_sf, quad_sf_weights, quad_sf_N, quad_trap_N, db4, db3, scaling, Primal
+using WaveletsEvaluation.DWT: quad_trap, quad_sf, quad_sf_weights, quad_sf_N, quad_trap_N, db4, db3, scaling, Primal
 function test_wavelet_quadrature()
     @testset begin
         @test quad_trap(x->x, db4, 0, 0, 8)^2≈quad_trap(x->x^2, db4, 0, 0, 8)
@@ -17,8 +12,8 @@ function test_wavelet_quadrature()
         @test abs(quad_sf(x->f(2x-1), wav, M1, J+1, 1, 6) - reference) < 1e-3
         @test abs(quad_sf(x->f(2x-1), wav, M2, J+1, 1, 3) - reference) < 1e-15
         @test abs(quad_trap(f, wav, J, 0, 13) - reference) < 1e-12
-        @test abs(dot(quad_sf_weights(Primal, scaling, wav, M1, 7), f.(linspace(0,5,M1*2^7+1)))-reference) < 1e-14
-        @test abs(dot(quad_sf_weights(Primal, scaling, wav, M2, 3), f.(linspace(0,5,M2*2^3+1)))-reference) < 1e-15
+        @test abs(dot(quad_sf_weights(Primal, scaling, wav, M1, 7), f.(LinRange(0,5,M1*2^7+1)))-reference) < 1e-14
+        @test abs(dot(quad_sf_weights(Primal, scaling, wav, M2, 3), f.(LinRange(0,5,M2*2^3+1)))-reference) < 1e-15
 
         g = x->sin(2pi*x);J = 3
         reference = quad_sf(g, wav, M2, J, 0, 5; periodic=true)

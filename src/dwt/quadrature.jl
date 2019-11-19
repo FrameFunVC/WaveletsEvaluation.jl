@@ -1,4 +1,4 @@
-using ..Sequences: shifted_conv
+
 """
 Return the quadrature coefficients for an integration method that
 integrates polynomials up to degree M exactly, multiplied by a scaling
@@ -12,7 +12,7 @@ numerical analysis".
 function quad_sf_weights(lo_d::AbstractVector{ELT}, M::Int; cutoff=1e-12, options...) where ELT
     K = (length(lo_d)-1)/2
 
-    A = vdm_matrix_chebyshev(linspace(-BigFloat(1),BigFloat(1),M+1))
+    A = vdm_matrix_chebyshev(LinRange(-BigFloat(1),BigFloat(1),M+1))
 
     m = sf_chebyshev_moments(BigFloat.(lo_d), M)
 
@@ -100,10 +100,10 @@ end
 The weights of the quadrature ∑w_if(x_i) ≈ ∫f(x)φ(x)dx where ∫ϕ(x)dx = 1 and ϕ is the scaling function.
 """
 quad_sf_weights(side::Side, kind::Kind, wav::DiscreteWavelet, M::Int; options...) =
-    quad_sf_weights(filter(side, kind, wav).a, M; options...)
+    quad_sf_weights(subvector(filter(side, kind, wav)), M; options...)
 
 fun_data(f::Function, side::Side, kind::Kind, wav::DiscreteWavelet, M::Int, j::Int, k::Int, d::Int) =
-    y = f.(linspace(support(side, kind, wav, j, k)..., (1<<d)*M+1))
+    y = f.(LinRange(support(side, kind, wav, j, k)..., (1<<d)*M+1))
 
 function fun_data_per(f::Function, side::Side, kind::Kind, wav::DiscreteWavelet, M::Int, j::Int, k::Int, d::Int)
     intervals = periodic_support(side, kind, wav, j, k)
@@ -111,10 +111,10 @@ function fun_data_per(f::Function, side::Side, kind::Kind, wav::DiscreteWavelet,
     s = Int(M/L)
     dx = 1/(1<<(j+d))/s
     t = intervals[1]
-    x = collect(linspace(t[1], t[2], Int((t[2] - t[1])/dx+1)))
+    x = collect(LinRange(t[1], t[2], Int((t[2] - t[1])/dx+1)))
     for i in 2:length(intervals)
         t = intervals[i]
-        x = vcat(x, collect(linspace(t[1], t[2], Int((t[2] - t[1])/dx+1))[2:end]) )
+        x = vcat(x, collect(LinRange(t[1], t[2], Int((t[2] - t[1])/dx+1))[2:end]) )
     end
     # info("Length is $(length(x))")
     y = f.(x)
@@ -131,23 +131,23 @@ function lowest_scale(y::Vector, side::Side, kind::Kind, wavelet::DiscreteWavele
     for i in 1:1+(1<<d-1)*L
         a[i] = dot(w,y[(0:M) .+ 1 .+ (i-1)*s])
     end
-    CompactSequence(a)
+    CompactInfiniteVector(a)
 end
 
 """
 DWT step ν_{j-1,l} = √2∑_k h_{k-2l}ν_{j,k} for some l's
 """
-function Base.step(L::Int, h::Sequence, x::Sequence)
+function Base.step(L::Int, h::InfiniteVector, x::InfiniteVector)
     ELT = eltype(h)
     y = zeros(ELT,L)
     for l in 0:L-1
         t = 0
-        for k in firstindex(h):lastindex(h)
+        for k in _firstindex(h):_lastindex(h)
             t += h[k]*x[k+2l]
         end
         y[l+1] = t
     end
-    CompactSequence(y/sqrt(2))
+    CompactInfiniteVector(y/sqrt(2))
 end
 
 """
@@ -168,8 +168,8 @@ function quad_sf(y::Vector, side::Side, kind::Kind, wav::DiscreteWavelet, M::Int
     x = lowest_scale(y, side, kind, wav, M, j, k, d)
     L = support_length(side, kind, wav)
     h = filter(side, kind, wav)
-    h = Sequences.shift(h, -Sequences.offset(h))
-    # println(Sequences.offset(h))
+    h = InfiniteVectors.shift(h, -InfiniteVectors.offset(h))
+    # println(InfiniteVectors.offset(h))
     for i in d:-1:1
         x = step(1+(1<<(i+j)-1)*L, h, x)
     end
@@ -197,16 +197,16 @@ function lowest_scale_per_N(y::Vector, side::Side, kind::Kind, wav::DiscreteWave
     for i in 1:length(y)
         a[i] = dot(w, y[map(x->mod(x-1,length(y))+1,(0:M) .+ 1 .+ (i-1)*s)])
     end
-    PeriodicExtension(a)
+    PeriodicInfiniteVector(a)
 end
 
-step_N(L, h, x) = PeriodicExtension(step(L, h, x).a)
+step_N(L, h, x) = PeriodicInfiniteVector(subvector(step(L, h, x)))
 
 
 function fun_data_N(f, side::Side, kind::Kind, wav::DiscreteWavelet{ELT}, M::Int, j::Int, d::Int) where ELT
     L = support_length(side, kind, wav)
     s = Int(M/L)
-    x = linspace(ELT(0), ELT(1), s*(1<<(j+d))+1)[1:end-1]
+    x = LinRange(ELT(0), ELT(1), s*(1<<(j+d))+1)[1:end-1]
     # info("Length is $(length(x))")
     f.(x)
 end
@@ -228,7 +228,7 @@ function quad_sf_N(y::Vector, side::Side, kind::Kind, wav::DiscreteWavelet, M::I
     for i in d-1:-1:0
         x = step_N(1<<(i+j),filter(side, kind, wav), x)
     end
-    x.a
+    subvector(x)
 end
 
 """
@@ -255,22 +255,31 @@ function quad_trap_N(y::Vector{ELT}, w::Vector{ELT}, j::Int, d::Int) where ELT
 end
 
 function quad_sf_weights(side::Side, kind::Kind, wav::DiscreteWavelet{ELT}, M::Int, d::Int) where {ELT}
-    w = CompactSequence(quad_sf_weights(side, kind, wav, M))
+    w = CompactInfiniteVector(quad_sf_weights(side, kind, wav, M))
     h = filter(side, kind, wav)
-    h = Sequences.shift(h, -Sequences.offset(h))
+    h = InfiniteVectors.shift(h, -InfiniteVectors.offset(h))
     s = Int(log2(Int(M/support_length(side, kind, wav))))
     for i in 1:d
         w = shifted_conv(h, w, 1<<(i-1+s))/sqrt(ELT(2))
     end
-    w.a
+    subvector(w)
 end
 
-
-# """"
-# Return the uniformly distributed points that are used in the quadrature
-# rule of the given scaling function.
-# """
-# function quad_sf_points(lo_f::AbstractVector{ELT}, M::Int) where ELT
-#     K = (length(lo_f)-1)//2
-#     linspace(ELT(-K), ELT(K), M+1)
-# end
+function shifted_conv(c1::CompactInfiniteVector{ELT}, c2::CompactInfiniteVector{ELT}, shift::Int) where {ELT}
+    l1 = sublength(c1)
+    l2 = sublength(c2)
+    o1 = c1.offset
+    o2 = c2.offset
+    offset = o1+shift*o2
+    L = (l2-1)+shift*(l1-1)+1
+    a = zeros(ELT, L)
+    for ai in 0:L-1
+        t = ELT(0)
+        # for k in max(0,floor(Int,(firstindex(c1)-l2+1)//shift)):max(0,floor(Int,(lastindex(c1)+l2)//shift))
+        for k in _firstindex(c1):_lastindex(c1)
+            t += c1[k]*c2[ai-shift*k]
+        end
+        a[ai+1] = t
+    end
+    CompactInfiniteVector(a, offset)
+end

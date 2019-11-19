@@ -1,28 +1,30 @@
+
+using LinearAlgebra
 # daubechies.jl
 struct DaubechiesWavelet{N,T} <: DiscreteWavelet{T}
 end
 
 HaarWavelet{T} = DaubechiesWavelet{1,T}
 
-is_symmetric(::Type{DaubechiesWavelet{1,T}}) where {T} = True
+is_symmetric(::Type{DaubechiesWavelet{1,T}}) where {T} = Val(true)
 
-is_orthogonal(::Type{DaubechiesWavelet{N,T}}) where {N,T} = True
-is_biorthogonal(::Type{DaubechiesWavelet{N,T}}) where {N,T} = True
-is_semiorthogonal(::Type{DaubechiesWavelet{N,T}}) where {N,T} = True
+is_orthogonal(::Type{DaubechiesWavelet{N,T}}) where {N,T} = Val(true)
+is_biorthogonal(::Type{DaubechiesWavelet{N,T}}) where {N,T} = Val(true)
+is_semiorthogonal(::Type{DaubechiesWavelet{N,T}}) where {N,T} = Val(true)
 
 db1_h = [1, 1]
 
 db4_h = [0.23037781330889648, 0.7148465705529157, 0.6308807679298589, -0.027983769416860003,
     -0.1870348117190931, 0.030841381835560722, 0.03288301166688518, -0.010597401785069035]
-_db1_h(T::Type) = CompactSequence(T(1)/sqrt(T(2))*db1_h, 0)
-_db2_h(T::Type) = CompactSequence(1/sqrt(T(2))*[(1+sqrt(T(3)))/4, (3+sqrt(T(3)))/4, (3-sqrt(T(3)))/4, (1-sqrt(T(3)))/4], 0)
+_db1_h(T::Type) = CompactInfiniteVector(T(1)/sqrt(T(2))*db1_h, 0)
+_db2_h(T::Type) = CompactInfiniteVector(1/sqrt(T(2))*[(1+sqrt(T(3)))/4, (3+sqrt(T(3)))/4, (3-sqrt(T(3)))/4, (1-sqrt(T(3)))/4], 0)
 
 T0 = Float64
 filter(::Prl, ::Scl, ::Type{DaubechiesWavelet{1,T0}}) = _db1_h(T0)
 filter(::Prl, ::Scl, ::Type{DaubechiesWavelet{2,T0}}) = _db2_h(T0)
-filter(::Prl, ::Scl, ::Type{DaubechiesWavelet{4,T0}}) = CompactSequence(db4_h, 0)
-filter(::Prl, ::Scl, ::Type{DaubechiesWavelet{N,T0}}) where {N} = CompactSequence(daubechies(N), 0)
-filter(::Prl, ::Cof, ::Type{DaubechiesWavelet{1,T}}) where {T} = CompactSequence(db1_h)
+filter(::Prl, ::Scl, ::Type{DaubechiesWavelet{4,T0}}) = CompactInfiniteVector(db4_h, 0)
+filter(::Prl, ::Scl, ::Type{DaubechiesWavelet{N,T0}}) where {N} = CompactInfiniteVector(daubechies(N), 0)
+filter(::Prl, ::Cof, ::Type{DaubechiesWavelet{1,T}}) where {T} = CompactInfiniteVector(db1_h)
 
 IMPLEMENTED_DB_WAVELETS = []
 for N in 1:10
@@ -55,7 +57,7 @@ vanishingmoments(::Dul, ::Type{DaubechiesWavelet{N,T}}) where {N,T} = N
 function daubechies(N::Int)
     @assert N > 0
     # Create polynomial
-    C = (VERSION<v"0.7-") ?  Array{Int}(N) :  Array{Int}(undef, N)
+    C = Array{Int}(undef, N)
     @inbounds for n = 0:N-1
         C[N-n] = binomial(N-1+n, n)
     end
@@ -85,7 +87,7 @@ function daubechies(N::Int)
 
     # Find coefficients of the polynomial
     # (1 + z)^N * \prod_i (z - z_i)
-    R = (VERSION<v"0.7-") ? Array{ComplexF64}(N+nr) : Array{ComplexF64}(undef, N+nr)
+    R = Array{ComplexF64}(undef, N+nr)
     @inbounds for i = 1:N
         R[i] = -1
     end
@@ -99,7 +101,6 @@ function daubechies(N::Int)
     HH = vieta( R )
 
     # Normalize coefficients
-    # scale!(HH, 1/norm(HH))
     rmul!(HH, 1/norm(HH))
     return real(HH)
 end

@@ -1,7 +1,6 @@
 # dwtstep.jl
 
-using ..Sequences
-using ..Filterbanks
+using ..Filterbanks, ..Embeddings
 
 export dwtstep, idwtstep
 

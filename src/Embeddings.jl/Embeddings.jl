@@ -1,13 +1,16 @@
 # embeddingsequence.jl
+module Embeddings
+import Base: getindex
 
+export Embedding
 """
-An EmbeddingSequence is like an ExtensionSequence, except that it does not store a vector.
+An Embedding is like an ExtensionSequence, except that it does not store a vector.
 Instead, one passes a vector along with each `getindex` call.
 """
-abstract type EmbeddingSequence <: Sequence end
+abstract type Embedding end
 
-
-struct PeriodicEmbedding <: EmbeddingSequence
+export PeriodicEmbedding
+struct PeriodicEmbedding <: Embedding
 end
 
 @inline getindex(s::PeriodicEmbedding, x, k::Int) = getindex(s, x, k, length(x))
@@ -16,10 +19,12 @@ getindex(s::PeriodicEmbedding, x, k::Int, length::Int) = 0 <= k < length ? x[k+1
 
 getindex(s::PeriodicEmbedding, x, k::Int, length::Int, offset::Int) = 0 <= k < length ? x[offset+k+1] : x[offset+mod(k, length) + 1]
 
-struct SymmetricEmbedding{PT_LEFT,PT_RIGHT,SYM_LEFT,SYM_RIGHT} <: EmbeddingSequence
+export PeriodicEmbedding
+struct SymmetricEmbedding{PT_LEFT,PT_RIGHT,SYM_LEFT,SYM_RIGHT} <: Embedding
 end
 
-struct FunctionEmbedding <: EmbeddingSequence
+export FunctionEmbedding
+struct FunctionEmbedding <: Embedding
   f :: Function
 end
 
@@ -59,9 +64,10 @@ getindex_left(s::SymmetricEmbedding{:wp,PT_RIGHT,:odd}, x, k) where {PT_RIGHT} =
 getindex_left(s::SymmetricEmbedding{:hp,PT_RIGHT,:even}, x, k) where {PT_RIGHT} = getindex(s, x, -k-1)
 getindex_left(s::SymmetricEmbedding{:hp,PT_RIGHT,:odd}, x, k) where {PT_RIGHT} = -getindex(s, x, -k-1)
 
-
-struct CompactEmbedding <: EmbeddingSequence
+export CompactEmbedding
+struct CompactEmbedding <: Embedding
     offset  ::  Int
 end
 
 getindex(s::CompactEmbedding, x, i) = x[s.offset+i+1]
+end

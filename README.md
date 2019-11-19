@@ -1,18 +1,11 @@
 
-[![Build Status](https://travis-ci.org/vincentcp/WaveletsCopy.jl.svg?branch=master)](https://travis-ci.org/vincentcp/WaveletsCopy.jl)
-[![Coverage Status](https://coveralls.io/repos/github/vincentcp/WaveletsCopy.jl/badge.svg?branch=master)](https://coveralls.io/github/vincentcp/WaveletsCopy.jl?branch=master)
-# Wavelets
+[![Build Status](https://travis-ci.org/FrameFunVC/WaveletsEvaluation.jl.svg?branch=master)](https://travis-ci.org/FrameFunVC/WaveletsEvaluation.jl)
+[![Coverage Status](https://coveralls.io/repos/github/FrameFunVC/WaveletsEvaluation.jl/badge.svg?branch=master)](https://coveralls.io/github/FrameFunVC/WaveletsEvaluation.jl?branch=master)
+# WaveletsEvaluation.jl
 A julia package for a fast Discrete Wavelet Transform, and plotting and evaluation of wavelets
 
-
 ```julia
-#Pkg.clone("https://github.com/vincentcp/WaveletsCopy.jl.git")
-#Pkg.build("WaveletsCopy")
-```
-
-
-```julia
-using WaveletsCopy
+using WaveletsEvaluation
 using Plots
 ```
 
@@ -36,7 +29,7 @@ db4, cdf53
 
 
 
-    (WaveletsCopy.DWT.DaubechiesWavelet{4,Float64}(), WaveletsCopy.DWT.CDFWavelet{5,3,Float64}())
+    (WaveletsEvaluation.DWT.DaubechiesWavelet{4,Float64}(), WaveletsEvaluation.DWT.CDFWavelet{5,3,Float64}())
 
 
 
@@ -60,7 +53,7 @@ perbound
 
 
 
-    WaveletsCopy.DWT.PeriodicBoundary()
+    WaveletsEvaluation.DWT.PeriodicBoundary()
 
 
 
@@ -100,7 +93,7 @@ for p in 1:4
     f, x = evaluate_in_dyadic_points(Dual, scaling, CDFWavelet{p,q,Float64}(), j, k, d; points=true)
     plot!(x, f, subplot=i)
     f, x = evaluate_in_dyadic_points(Dual, wavelet, CDFWavelet{p,q,Float64}(), j, k, d; points=true)
-    plot!(x, f, subplot=i)  
+    plot!(x, f, subplot=i)
     i += 1
   end
 end
@@ -185,7 +178,7 @@ evaluate(Primal, scaling, db3, 0, 0, .123, xtol=1e-1), evaluate(Primal, scaling,
 
 
 ```julia
-t = linspace(-1,1,1000)
+t = LinRange(-1,1,1000)
 plot(t,evaluate_periodic.(Primal, scaling, db3, 3, 0, t))
 plot!(t,evaluate.(Primal, scaling, db3, 3, 0, t))
 ```

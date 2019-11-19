@@ -1,14 +1,8 @@
 # suit_dwtstep.jl
-using WaveletsCopy
-using WaveletsCopy.Filterbanks
-using WaveletsCopy.Sequences
-
-if VERSION < v"0.7-"
-    using Base.Test
-else
-    using Test, Random, LinearAlgebra
-    linspace(a,b,c) = range(a, stop=b, length=c)
-end
+using WaveletsEvaluation
+using WaveletsEvaluation.Filterbanks
+using WaveletsEvaluation.InfiniteVectors
+using Test, Random, LinearAlgebra
 
 P = 80
 
@@ -19,7 +13,7 @@ randomfunction(x) = rand(rng)
 
 @testset "$(rpad("Inversibility of dwtstep",P))"  begin
     for N in 10:10:1000
-        t = linspace(-1,1,N)
+        t = LinRange(-1,1,N)
         for f in (sin, characteristicfunction, randomfunction)
             x = map(f,t)
             for w in (DWT.IMPLEMENTED_WAVELETS...,)
@@ -38,7 +32,7 @@ end
     T = Float64
     for n in 1:10
         N = 2^n
-        t = linspace(-1,1,N)
+        t = LinRange(-1,1,N)
         for f in (sin, characteristicfunction, randomfunction)
             x = map(f,t)
             for w in (DWT.IMPLEMENTED_WAVELETS...,)

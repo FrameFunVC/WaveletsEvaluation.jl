@@ -16,7 +16,7 @@ function recursion_algorithm(side::Side, kind::Kind, w::DiscreteWavelet{T}, L=0;
     f
 end
 
-function recursion_algorithm(s::CompactSequence{T}, L; options...) where {T}
+function recursion_algorithm(s::CompactInfiniteVector{T}, L; options...) where {T}
     # Wrapper for allocating memory and using recursion_algorithm!
     f = zeros(T, recursion_length(s, L))
     recursion_algorithm!(f, s, L; options...)
@@ -27,8 +27,8 @@ end
 recursion_algorithm!(f::AbstractArray{T,1}, side::Side, kind::Kind, w::DiscreteWavelet{T}, L=0; options...)  where {T} =
     recursion_algorithm!(f::AbstractArray, filter(side, kind, w), L; options...)
 
-# Convenience function: convert compact sequence to array with filter coefficients
-recursion_algorithm!(f::AbstractArray{T,1}, s::CompactSequence{T}, L; options...)  where {T} = recursion_algorithm!(f::AbstractArray, s.a, L; options...)
+# Convenience function: convert compact InfiniteVector to array with filter coefficients
+recursion_algorithm!(f::AbstractArray{T,1}, s::CompactInfiniteVector{T}, L; options...)  where {T} = recursion_algorithm!(f::AbstractArray, subvector(s), L; options...)
 
 function recursion_algorithm!(f::AbstractArray{T,1}, h::AbstractArray{T,1}, L; tol = sqrt(eps(T)), options...) where {T}
     @assert L >= 0
@@ -42,10 +42,10 @@ function recursion_algorithm!(f::AbstractArray{T,1}, h::AbstractArray{T,1}, L; t
     # Create matrix from filter coefficients
     H = DWT._get_H(h)
     # Find eigenvector eigv
-    E = (VERSION < v"0.7-") ? eigfact(H) : eigen(H)
+    E = eigen(H)
 
     # Select eigenvector with eigenvalue equal to 1/√2
-    index = (VERSION < v"0.7-") ? find(abs.(E.values .- 1 ./sqrt2) .< tol) : findall(abs.(E.values .- 1 ./sqrt2) .< tol)
+    index = findall(abs.(E.values .- 1 ./sqrt2) .< tol)
     @assert length(index) > 0
     i = index[1]
     V = E.vectors[:,i]
@@ -76,7 +76,7 @@ end
 "Expected length of the output array of the recursion_algorithm. "
 recursion_length(side::Side, kind::Kind, w::DiscreteWavelet{T}, L::Int)  where {T} =
     recursion_length(support_length(side, kind, w), L)
-recursion_length(f::CompactSequence, L::Int) = recursion_length(sublength(f)-1, L)
+recursion_length(f::CompactInfiniteVector, L::Int) = recursion_length(sublength(f)-1, L)
 recursion_length(H::Int, L::Int) = (L >= 0) ? (1<<L)*H+1 : 1
 
 "The equispaced grid where recursion_algorithm evaluates. "
@@ -86,7 +86,7 @@ function dyadicpointsofrecursion(side::Side, kind::Kind, w::DiscreteWavelet{T}, 
     s = support(side, kind, w)
     H = support_length(side, kind, w)
     if L >= 0
-        linspace(T(s[1]), T(s[2]), (1<<L)*H+1)
+        LinRange(T(s[1]), T(s[2]), (1<<L)*H+1)
     else
         # include zero, therefore, do some rounding
         (1<<-L)*(cld(s[1],1<<-L):fld(s[2],1<<-L))

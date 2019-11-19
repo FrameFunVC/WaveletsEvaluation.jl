@@ -1,20 +1,10 @@
 # discretewavelets.jl
 module DWT
-if VERSION > v"0.7-"
-    using LinearAlgebra
-    linspace(a,b,c) = range(a, stop=b, length=c)
-else
-    ComplexF64 = Complex128
-    rmul! = scale!
-    copyto! = copy!
-end
-
-using ..Sequences
-using ..Filterbanks
-
+using InfiniteVectors, ..Filterbanks, ..Embeddings
+using InfiniteVectors: sublength, subvector, _firstindex, _lastindex
 import ..Filterbanks: Filterbank
 import Base: eltype, filter
-import ..Sequences: support
+import InfiniteVectors: support
 export filter
 
 # from scaling_coefficients.jl

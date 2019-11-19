@@ -15,7 +15,7 @@ end
   x, f
 end
 
-@recipe f(w::DWT.DiscreteWavelet, is_orthogonal::DWT.True) = Primal , w
+@recipe f(w::DWT.DiscreteWavelet, is_orthogonal::Val{true}) = Primal , w
 
 @recipe function f(side::DWT.Side, w::DWT.DiscreteWavelet)
   @series begin
@@ -28,7 +28,7 @@ end
 
 struct Both <: DWT.Side end
 
-@recipe function f(w::DWT.DiscreteWavelet, is_orthogonal::DWT.False; side=Both()::DWT.Side)
+@recipe function f(w::DWT.DiscreteWavelet, is_orthogonal::Val{false}; side=Both()::DWT.Side)
   side, w
 end
 
