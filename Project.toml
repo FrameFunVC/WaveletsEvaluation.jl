@@ -1,7 +1,7 @@
 name = "WaveletsEvaluation"
 uuid = "56f66b1c-89a8-11e8-2073-09c9ab0369ab"
 authors = ["vincentcp"]
-version = "0.0.1"
+version = "0.0.2"
 
 [deps]
 CardinalBSplines = "87d49508-7ad8-11e8-0eda-cb6920b58870"

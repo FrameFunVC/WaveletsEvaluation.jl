@@ -84,7 +84,6 @@ function scaling_coefficients!(c, f, filter::CompactInfiniteVector{T}, fembeddin
         end
         c[j+1-offset] = ci
     end
-    @show scaled
     scaled && rmul!(c, T(1)/sqrt(T(length(f))))
 end
 
