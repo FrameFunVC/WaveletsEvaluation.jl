@@ -74,7 +74,7 @@ function scaling_coefficients(f::AbstractArray, filter::CompactInfiniteVector{T}
 end
 
 "In place method of scaling_coefficients"
-function scaling_coefficients!(c, f, filter::CompactInfiniteVector{T}, fembedding; offset::Int=0, options...) where {T}
+function scaling_coefficients!(c, f, filter::CompactInfiniteVector{T}, fembedding; offset::Int=0, scaled=true, options...) where {T}
     # TODO write a convolution function
     # convolution between low pass filter and function values gives approximation of scaling coefficients
     for j in offset:offset+length(c)-1
@@ -82,8 +82,10 @@ function scaling_coefficients!(c, f, filter::CompactInfiniteVector{T}, fembeddin
         for l in _firstindex(filter):_lastindex(filter)
             ci += filter[l]*fembedding[f, j-l]
         end
-        c[j+1-offset] = T(1)/T(sqrt(length(f)))*ci
+        c[j+1-offset] = ci
     end
+    @show scaled
+    scaled && rmul!(c, T(1)/sqrt(T(length(f))))
 end
 
 _scalingcoefficient_filter(f::CompactInfiniteVector) =

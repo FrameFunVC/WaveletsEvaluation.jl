@@ -320,6 +320,7 @@ function polyphase_synthesis!(x, L::Int, y, l1::Int, l2::Int, f::PolyphaseMatrix
         for l = _firstindex(Godd):_lastindex(Godd)
             xj_o += Godd[l] * embedding[y,j-l, l2, l1]
         end
+        
         x[(j<<1)+1] = xj_e
         x[(j<<1)+2] = xj_o
     end

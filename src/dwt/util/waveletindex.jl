@@ -42,13 +42,18 @@ wavelet_indices(l::Int) = DWTIndexList(l)
     (Scl(), 0, 0),    (Wvl(), 0, 0),    (Wvl(), 1, 0),     (Wvl(), 1, 1)
 """
 function wavelet_index(n::Int, i::Int, l::Int)
-    if i > n/(1<<l)
-        j = level(n,i)
-        k = mod(i-1,1<<j)
+    if i > n//(1<<l)
+		j,k = wavelet_wavelet_index(n, i)
         Wvl(), j, k
     else
         Scl(), Int(log2(n))-l, i-1
     end
+end
+
+function wavelet_wavelet_index(n::Int, i::Int)
+	j = level(n,i)
+	k = mod(i-1,1<<j)
+	j, k
 end
 
 wavelet_index(level::Int, index::Int) = wavelet_index(1<<level, index, level)
@@ -69,6 +74,7 @@ function level(n::Int, i::Int)
             return l
         end
     end
+	return round(Int,log2(n))
 end
 
 """

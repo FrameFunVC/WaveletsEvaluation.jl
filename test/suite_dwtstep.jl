@@ -78,3 +78,66 @@ end
         end
     end
 end
+
+for w in (db2, cdf24)
+    @testset "Unscaled wavelet evaluation" begin
+        @test evaluate_in_dyadic_points(Primal, scaling, w, 0, 0, 0;scaled=true)*sqrt(2)≈
+            evaluate_in_dyadic_points(Primal, scaling, w, 1, 0, 1;scaled=true)
+        @test evaluate_in_dyadic_points(Primal, scaling, w, 0, 0, 0;scaled=false)≈
+            evaluate_in_dyadic_points(Primal, scaling, w, 1, 0, 1;scaled=false)
+        @test evaluate_in_dyadic_points(Primal, scaling, w, 0, 0, 10;scaled=true)*2sqrt(2)≈
+            evaluate_in_dyadic_points(Primal, scaling, w, 3, 0, 13;scaled=true)
+        @test evaluate_in_dyadic_points(Primal, scaling, w, 0, 0, 10;scaled=false)≈
+            evaluate_in_dyadic_points(Primal, scaling, w, 3, 0, 13;scaled=false)
+
+        @test evaluate_in_dyadic_points(Primal, wavelet, w, 0, 0, 0;scaled=true)*sqrt(2)≈
+            evaluate_in_dyadic_points(Primal, wavelet, w, 1, 0, 1;scaled=true)
+        @test evaluate_in_dyadic_points(Primal, wavelet, w, 0, 0, 0;scaled=false)≈
+            evaluate_in_dyadic_points(Primal, wavelet, w, 1, 0, 1;scaled=false)
+        @test evaluate_in_dyadic_points(Primal, wavelet, w, 0, 0, 10;scaled=true)*2sqrt(2)≈
+            evaluate_in_dyadic_points(Primal, wavelet, w, 3, 0, 13;scaled=true)
+        @test evaluate_in_dyadic_points(Primal, wavelet, w, 0, 0, 10;scaled=false)≈
+            evaluate_in_dyadic_points(Primal, wavelet, w, 3, 0, 13;scaled=false)
+
+        @test WaveletsEvaluation.DWT.evaluate_periodic_scaling_basis_in_dyadic_points(Primal, w, [1,0,0,0,0,0,0,0],4,scaled=true)[1:4]≈
+            (WaveletsEvaluation.DWT.evaluate_periodic_scaling_basis_in_dyadic_points(Primal, w, [1,0,0,0],3,scaled=true)*sqrt(2))[1:4]
+        @test WaveletsEvaluation.DWT.evaluate_periodic_scaling_basis_in_dyadic_points(Primal, w, [1,0,0,0,0,0,0,0],4,scaled=false)[1:4]≈
+            WaveletsEvaluation.DWT.evaluate_periodic_scaling_basis_in_dyadic_points(Primal, w, [1,0,0,0],3,scaled=false)[1:4]
+        @test WaveletsEvaluation.DWT.evaluate_periodic_scaling_basis_in_dyadic_points(Primal, w, [1,0,0,0,0,0,0,0],4,scaled=true)≈
+            (WaveletsEvaluation.DWT.evaluate_periodic_scaling_basis_in_dyadic_points(Primal, w, [1,0,0,0,0,0,0,0],4,scaled=false)*2sqrt(2))
+
+        @test WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [1,0,0,0,0,0,0,0],4,scaled=true)[1:8]≈
+            WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [1,0,0,0],3,scaled=true)
+        @test WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [0,1,0,0,0,0,0,0],4,scaled=true)≈
+            WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [0,1,0,0],4,scaled=true)
+        @test WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [0,0,1,0,0,0,0,0],4,scaled=true)≈
+            WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [0,0,1,0],4,scaled=true)
+        @test WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [0,0,0,1,0,0,0,0],4,scaled=true)≈
+            WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [0,0,0,1],4,scaled=true)
+        @test WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [
+            0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],4,scaled=true)[1:8]*sqrt(2)≈
+            WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [
+            0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],5,scaled=true)[1:8]
+
+        @test WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [1,0,0,0,0,0,0,0],4,scaled=false)[1:8]≈
+            WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [1,0,0,0],3,scaled=false)
+        @test WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [0,1,0,0,0,0,0,0],4,scaled=false)≈
+            WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [0,1,0,0],4,scaled=false)
+        @test WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [0,0,1,0,0,0,0,0],4,scaled=false)≈
+            WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [0,0,1,0],4,scaled=false)
+        @test WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [0,0,0,1,0,0,0,0],4,scaled=false)≈
+            WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [0,0,0,1],4,scaled=false)
+        @test WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [
+            0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0],4,scaled=false)[1:8]≈
+            WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [
+            0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0],5,scaled=false)[1:8]
+
+        # Constant should be scale invariant
+        @test WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [1,0,0,0],2,scaled=true)≈
+            WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [1,0,0,0],2,scaled=false)
+        @test WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [1,0,0,0,0,0,0,0],3,scaled=false)≈
+            WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [1,0,0,0,0,0,0,0],3,scaled=false)
+        @test WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],4,scaled=false)≈
+            WaveletsEvaluation.DWT.evaluate_periodic_wavelet_basis_in_dyadic_points(Primal, w, [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],4,scaled=false)
+    end
+end

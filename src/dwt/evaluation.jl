@@ -6,20 +6,20 @@ evaluation of 2^{j/2}ϕ(2^jx-k) where f is the primal/dual scaling/wavelet funct
 
 See also `evaluate`
 """
-function evaluate_periodic(side::Side, kind::Kind, w::DiscreteWavelet{T}, j::Int, k::Int, x::S; xtol::S=1e-5, options...) where {T, S<:Real}
+function evaluate_periodic(side::Side, kind::Kind, w::DiscreteWavelet{T}, j::Int, k::Int, x::S; xtol::S=1e-5, dmax = 20, options...) where {T, S<:Real}
     # Map x to [0,1]
     a = T(0); b = T(1)
     offset = floor(x)
     x -= offset
 
     # Look for kpoint*2^{-d} close to x
-    d, kpoint = closest_dyadic_point(x, xtol; options...)
+    d, kpoint = closest_dyadic_point(x, xtol; dmax=dmax)
 
     # If x is outside of support return 0
     (!in_periodic_support(kpoint/2^d, periodic_support(side, kind, w, j, k, a, b)...)) && return T(0)
 
     # Evaluate wavelet in dyadic points
-    f = evaluate_periodic_in_dyadic_points(side, kind, w, j, k, d)
+    f = evaluate_periodic_in_dyadic_points(side, kind, w, j, k, d; options...)
     # and select the correct point
     f[mod(kpoint,length(f))+1]
 end
@@ -132,8 +132,8 @@ function evaluate_in_dyadic_points(side::DWT.Side, kind::DWT.Wvl, w::DWT.Discret
     end
 end
 
-function evaluate_periodic_wavelet_basis_in_dyadic_points(s::DWT.Side, w::DWT.DiscreteWavelet{T}, coeffs, d::Int=10; points = false, options...) where {T}
-    y = evaluate_periodic_scaling_basis_in_dyadic_points(s, w, DWT.idwt(coeffs, w, perbound), d; options...)
+function evaluate_periodic_wavelet_basis_in_dyadic_points(s::DWT.Side, w::DWT.DiscreteWavelet{T}, coeffs::AbstractVector, d::Int=10; points = false, scaled=true, options...) where {T}
+    y = evaluate_periodic_scaling_basis_in_dyadic_points(s, w, DWT.idwt(coeffs, w, perbound;scaled=scaled), d; scaled=scaled, options...)
     if points
         y, DWT.periodic_dyadic_points(d, T)
     else
@@ -141,7 +141,7 @@ function evaluate_periodic_wavelet_basis_in_dyadic_points(s::DWT.Side, w::DWT.Di
     end
 end
 
-function evaluate_periodic_scaling_basis_in_dyadic_points(s::DWT.Side, w::DWT.DiscreteWavelet{T}, coeffs, d::Int=10; points = false, options...) where {T}
+function evaluate_periodic_scaling_basis_in_dyadic_points(s::DWT.Side, w::DWT.DiscreteWavelet{T}, coeffs::AbstractVector, d::Int=10; points = false, options...) where {T}
     f = zeros(T, evaluate_periodic_in_dyadic_points_scratch_length(s, scaling, w, Int(log2(length(coeffs))), 0, d))
     scratch = zeros(T, evaluate_periodic_in_dyadic_points_scratch2_length(s, scaling, w, Int(log2(length(coeffs))), 0, d))
     f_scaled = similar(f)
@@ -154,9 +154,9 @@ function evaluate_periodic_scaling_basis_in_dyadic_points(s::DWT.Side, w::DWT.Di
     end
 end
 
-function evaluate_periodic_wavelet_basis_in_dyadic_points!(y::Vector{T}, s::DWT.Side, w::DWT.DiscreteWavelet{T}, coeffs, d, f, f_scaled, scratch, coefscopy; options...) where T
-    DWT.idwt!(coefscopy, coeffs, SFilterBank(s, w), perbound)
-    evaluate_periodic_scaling_basis_in_dyadic_points!(y, s, w, coefscopy, d, f, f_scaled, scratch; options...)
+function evaluate_periodic_wavelet_basis_in_dyadic_points!(y::Vector{T}, s::DWT.Side, w::DWT.DiscreteWavelet{T}, coeffs, d, f, f_scaled, scratch, coefscopy; scaled=true, options...) where T
+    DWT.idwt!(coefscopy, coeffs, InverseSFilterBank(s, w, scaled), perbound)
+    evaluate_periodic_scaling_basis_in_dyadic_points!(y, s, w, coefscopy, d, f, f_scaled, scratch; scaled=scaled, options...)
 end
 
 function evaluate_periodic_scaling_basis_in_dyadic_points!(y::Vector{T}, s::DWT.Side, w::DWT.DiscreteWavelet{T}, coeffs, d::Int, f, f_scaled, scratch;
@@ -166,7 +166,7 @@ function evaluate_periodic_scaling_basis_in_dyadic_points!(y::Vector{T}, s::DWT.
     if d < j
         error("grid has to be at least as fine as the basis. ")
     end
-    DWT.evaluate_in_dyadic_points!(f, s, scaling, w, j, 0, d, scratch)
+    DWT.evaluate_in_dyadic_points!(f, s, scaling, w, j, 0, d, scratch; options...)
     _evaluate_periodic_scaling_basis_in_dyadic_points!(y, f, s, w, coeffs, j, d, f_scaled)
 end
 
@@ -295,11 +295,11 @@ function evaluate_in_dyadic_points!(f::AbstractArray{T,1}, side::Side, kind::Kin
     end
 end
 
-function evaluate_in_dyadic_points!(f::AbstractArray{T,1}, s::CompactInfiniteVector{T}, j::Int, k::Int, d::Int; options...) where {T}
+function evaluate_in_dyadic_points!(f::AbstractArray{T,1}, s::CompactInfiniteVector{T}, j::Int, k::Int, d::Int; scaled=true, options...) where {T}
     # Evaluation is done through the recursion_algorithm
 
     @assert length(f) == DWT.recursion_length(s, (d-j))
     recursion_algorithm!(f, s, (d-j); options...)
-    rmul!(f,T(2)^(T(j)/2))
+    scaled && rmul!(f,T(2)^(T(j)/2))
     nothing
 end
