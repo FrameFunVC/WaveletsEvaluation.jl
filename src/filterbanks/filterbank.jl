@@ -1,6 +1,5 @@
-# filterbank.jl
-
 module Filterbanks
+
 using InfiniteVectors, ..Embeddings
 using InfiniteVectors: _firstindex, _lastindex
 import Base: transpose, eltype, getindex, adjoint
@@ -101,6 +100,9 @@ dual_highpassfilter(fb::Filterbank) = highpassfilter(fb.dual_pair)
 #     return a
 # end
 
+firstindex1(a) = _firstindex(a)[1]
+lastindex1(a) = _lastindex(a)[1]
+
 # Split the (finite) signal x embedded in (infinite) embedding into a low pass signal y1
 # and a high pass signal y2. The filters are given by the polyphasematrix f.
 function polyphase_analysis!(y1, y2, x, f::PolyphaseMatrix, embedding)
@@ -114,25 +116,25 @@ function polyphase_analysis!(y1, y2, x, f::PolyphaseMatrix, embedding)
     # in evaluations of x that not occur outside of the embedding.
     # Remark (TODO?): this could be even more efficient.
     L = length(x)
-    lower_i = min(length(y1)-1, maximum(map(_lastindex,(Heven,Geven,Godd,Hodd))))
+    lower_i = min(length(y1)-1, maximum(map(lastindex1,(Heven,Geven,Godd,Hodd))))
     (L%2 == 0) ?
-      upper_i = L>>1 - 1 + minimum(map(_firstindex,(Heven,Geven,Godd,Hodd))) :
-      upper_i = L>>1 - L%2 + minimum(map(_firstindex,(Heven,Geven,Godd,Hodd)))
+      upper_i = L>>1 - 1 + minimum(map(firstindex1,(Heven,Geven,Godd,Hodd))) :
+      upper_i = L>>1 - L%2 + minimum(map(firstindex1,(Heven,Geven,Godd,Hodd)))
     upper_i = max(0, upper_i)
     # Lower boundary region
     @inbounds for i in 0:lower_i
         y1i = zero(T)
         y2i = zero(T)
-        for l = _firstindex(Heven):_lastindex(Heven)
+        for l = firstindex1(Heven):lastindex1(Heven)
             y1i += Heven[l] * embedding[x, 2*i-2*l]
         end
-        for l = _firstindex(Geven):_lastindex(Geven)
+        for l = firstindex1(Geven):lastindex1(Geven)
             y2i += Geven[l] * embedding[x, 2*i-2*l]
         end
-        for l = _firstindex(Hodd):_lastindex(Hodd)
+        for l = firstindex1(Hodd):lastindex1(Hodd)
             y1i += Hodd[l] * embedding[x, 2*i-2*l+1]
         end
-        for l = _firstindex(Godd):_lastindex(Godd)
+        for l = firstindex1(Godd):lastindex1(Godd)
             y2i += Godd[l] * embedding[x, 2*i-2*l+1]
         end
         y1[i+1] = y1i
@@ -147,16 +149,16 @@ function polyphase_analysis!(y1, y2, x, f::PolyphaseMatrix, embedding)
       # @assert 0<=i<min(length(y1),length(y2))
         y1i = zero(T)
         y2i = zero(T)
-        for l = _firstindex(Heven):_lastindex(Heven)
+        for l = firstindex1(Heven):lastindex1(Heven)
             y1i += Heven[l] * x[2*i-2*l+1]
         end
-        for l = _firstindex(Geven):_lastindex(Geven)
+        for l = firstindex1(Geven):lastindex1(Geven)
             y2i += Geven[l] * x[2*i-2*l+1]
         end
-        for l = _firstindex(Hodd):_lastindex(Hodd)
+        for l = firstindex1(Hodd):lastindex1(Hodd)
             y1i += Hodd[l] * x[2*i-2*l+2]
         end
-        for l = _firstindex(Godd):_lastindex(Godd)
+        for l = firstindex1(Godd):lastindex1(Godd)
             y2i += Godd[l] * x[2*i-2*l+2]
         end
         y1[i+1] = y1i
@@ -167,16 +169,16 @@ function polyphase_analysis!(y1, y2, x, f::PolyphaseMatrix, embedding)
     @inbounds for i in upper_i:length(y1)-1
         y1i = zero(T)
         y2i = zero(T)
-        for l = _firstindex(Heven):_lastindex(Heven)
+        for l = firstindex1(Heven):lastindex1(Heven)
             y1i += Heven[l] * embedding[x, 2*i-2*l]
         end
-        for l = _firstindex(Geven):_lastindex(Geven)
+        for l = firstindex1(Geven):lastindex1(Geven)
             y2i += Geven[l] * embedding[x, 2*i-2*l]
         end
-        for l = _firstindex(Hodd):_lastindex(Hodd)
+        for l = firstindex1(Hodd):lastindex1(Hodd)
             y1i += Hodd[l] * embedding[x, 2*i-2*l+1]
         end
-        for l = _firstindex(Godd):_lastindex(Godd)
+        for l = firstindex1(Godd):lastindex1(Godd)
             y2i += Godd[l] * embedding[x, 2*i-2*l+1]
         end
         y1[i+1] = y1i
@@ -199,16 +201,16 @@ function polyphase_synthesis!(x, y1, y2, f::PolyphaseMatrix, embedding)
     for j in 0:length(x)>>1 - 1
         xj_e = zero(T)
         xj_o = zero(T)
-        for l = _firstindex(Heven):_lastindex(Heven)
+        for l = firstindex1(Heven):lastindex1(Heven)
             xj_e += Heven[l] * embedding[y1,j-l, l1]
         end
-        for l = _firstindex(Geven):_lastindex(Geven)
+        for l = firstindex1(Geven):lastindex1(Geven)
             xj_e += Geven[l] * embedding[y2,j-l, l2]
         end
-        for l = _firstindex(Hodd):_lastindex(Hodd)
+        for l = firstindex1(Hodd):lastindex1(Hodd)
             xj_o += Hodd[l] * embedding[y1,j-l, l1]
         end
-        for l = _firstindex(Godd):_lastindex(Godd)
+        for l = firstindex1(Godd):lastindex1(Godd)
             xj_o += Godd[l] * embedding[y2,j-l, l2]
         end
         x[2*j+1] = xj_e
@@ -227,26 +229,26 @@ function polyphase_analysis!(y::AbstractVector{T}, l1::Int, l2::Int, x::Abstract
     # Remark (TODO?): this could be even more efficient.
 
 
-    lower_i = min(l1-1, maximum(map(_lastindex,(Heven,Geven,Godd,Hodd))))
+    lower_i = min(l1-1, maximum(map(lastindex1,(Heven,Geven,Godd,Hodd))))
     (L%2 == 0) ?
-      upper_i = L>>1 - 1 + minimum(map(_firstindex,(Heven,Geven,Godd,Hodd))) :
-      upper_i = L>>1 - L%2 + minimum(map(_firstindex,(Heven,Geven,Godd,Hodd)))
+      upper_i = L>>1 - 1 + minimum(map(firstindex1,(Heven,Geven,Godd,Hodd))) :
+      upper_i = L>>1 - L%2 + minimum(map(firstindex1,(Heven,Geven,Godd,Hodd)))
     upper_i = max(0, upper_i)
 
     # Lower boundary region
     @inbounds for i in 0:lower_i
         y1i = zero(T)
         y2i = zero(T)
-        for l = _firstindex(Heven):_lastindex(Heven)
+        for l = firstindex1(Heven):lastindex1(Heven)
             y1i += Heven[l] * embedding[x, 2*i-2*l, L]
         end
-        for l = _firstindex(Geven):_lastindex(Geven)
+        for l = firstindex1(Geven):lastindex1(Geven)
             y2i += Geven[l] * embedding[x, 2*i-2*l, L]
         end
-        for l = _firstindex(Hodd):_lastindex(Hodd)
+        for l = firstindex1(Hodd):lastindex1(Hodd)
             y1i += Hodd[l] * embedding[x, 2*i-2*l+1, L]
         end
-        for l = _firstindex(Godd):_lastindex(Godd)
+        for l = firstindex1(Godd):lastindex1(Godd)
             y2i += Godd[l] * embedding[x, 2*i-2*l+1, L]
         end
         y[i+1] = y1i
@@ -257,16 +259,16 @@ function polyphase_analysis!(y::AbstractVector{T}, l1::Int, l2::Int, x::Abstract
     @inbounds for i in lower_i+1:upper_i-1
         y1i = zero(T)
         y2i = zero(T)
-        for l = _firstindex(Heven):_lastindex(Heven)
+        for l = firstindex1(Heven):lastindex1(Heven)
             y1i += Heven[l] * x[2*i-2*l+1]
         end
-        for l = _firstindex(Geven):_lastindex(Geven)
+        for l = firstindex1(Geven):lastindex1(Geven)
             y2i += Geven[l] * x[2*i-2*l+1]
         end
-        for l = _firstindex(Hodd):_lastindex(Hodd)
+        for l = firstindex1(Hodd):lastindex1(Hodd)
             y1i += Hodd[l] * x[2*i-2*l+2]
         end
-        for l = _firstindex(Godd):_lastindex(Godd)
+        for l = firstindex1(Godd):lastindex1(Godd)
             y2i += Godd[l] * x[2*i-2*l+2]
         end
         y[i+1] = y1i
@@ -277,16 +279,16 @@ function polyphase_analysis!(y::AbstractVector{T}, l1::Int, l2::Int, x::Abstract
     @inbounds for i in upper_i:l1-1
         y1i = zero(T)
         y2i = zero(T)
-        for l = _firstindex(Heven):_lastindex(Heven)
+        for l = firstindex1(Heven):lastindex1(Heven)
             y1i += Heven[l] * embedding[x, 2*i-2*l, L]
         end
-        for l = _firstindex(Geven):_lastindex(Geven)
+        for l = firstindex1(Geven):lastindex1(Geven)
             y2i += Geven[l] * embedding[x, 2*i-2*l, L]
         end
-        for l = _firstindex(Hodd):_lastindex(Hodd)
+        for l = firstindex1(Hodd):lastindex1(Hodd)
             y1i += Hodd[l] * embedding[x, 2*i-2*l+1, L]
         end
-        for l = _firstindex(Godd):_lastindex(Godd)
+        for l = firstindex1(Godd):lastindex1(Godd)
             y2i += Godd[l] * embedding[x, 2*i-2*l+1, L]
         end
         y[i+1] = y1i
@@ -308,19 +310,19 @@ function polyphase_synthesis!(x, L::Int, y, l1::Int, l2::Int, f::PolyphaseMatrix
     @inbounds for j in 0:l
         xj_e = zero(T)
         xj_o = zero(T)
-        for l = _firstindex(Heven):_lastindex(Heven)
+        for l = firstindex1(Heven):lastindex1(Heven)
             xj_e += Heven[l] * embedding[y,j-l, l1]
         end
-        for l = _firstindex(Geven):_lastindex(Geven)
+        for l = firstindex1(Geven):lastindex1(Geven)
             xj_e += Geven[l] * embedding[y,j-l, l2, l1]
         end
-        for l = _firstindex(Hodd):_lastindex(Hodd)
+        for l = firstindex1(Hodd):lastindex1(Hodd)
             xj_o += Hodd[l] * embedding[y,j-l, l1]
         end
-        for l = _firstindex(Godd):_lastindex(Godd)
+        for l = firstindex1(Godd):lastindex1(Godd)
             xj_o += Godd[l] * embedding[y,j-l, l2, l1]
         end
-        
+
         x[(j<<1)+1] = xj_e
         x[(j<<1)+2] = xj_o
     end

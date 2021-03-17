@@ -1,4 +1,3 @@
-# scaling_coefficients.jl
 
 """
     The scaling coeffients function deals with the wavelt crime.
@@ -79,7 +78,7 @@ function scaling_coefficients!(c, f, filter::CompactInfiniteVector{T}, fembeddin
     # convolution between low pass filter and function values gives approximation of scaling coefficients
     for j in offset:offset+length(c)-1
         ci = zero(T)
-        for l in _firstindex(filter):_lastindex(filter)
+        for l in firstindex1(filter):lastindex1(filter)
             ci += filter[l]*fembedding[f, j-l]
         end
         c[j+1-offset] = ci

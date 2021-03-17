@@ -1,8 +1,11 @@
-# test_evaluation.jl
 
 using WaveletsEvaluation, QuadGK, CardinalBSplines, WaveletsEvaluation.Filterbanks, Test, LinearAlgebra
 using CardinalBSplines: evaluate_BSpline
 using InfiniteVectors: _firstindex, _lastindex, subvector, sublength
+
+firstindex1(a) = _firstindex(a)[1]
+lastindex1(a) = _lastindex(a)[1]
+
 
 function pad(s,i=80)
    "$(rpad(s,i))"
@@ -171,10 +174,10 @@ function supporttest()
     for w in (DWT.IMPLEMENTED_CDF_WAVELETS..., DWT.IMPLEMENTED_DB_WAVELETS...)
       f = DWT.filter(Primal, scaling, w)
       s = DWT.support(Primal, scaling, w)
-      @test ((_firstindex(f), _lastindex(f)) == s)
+      @test ((firstindex1(f), lastindex1(f)) == s)
       f = DWT.filter(Dual, scaling, w)
       s = DWT.support(Dual, scaling, w)
-      @test ((_firstindex(f), _lastindex(f)) == s)
+      @test ((firstindex1(f), lastindex1(f)) == s)
     end
   end
 end

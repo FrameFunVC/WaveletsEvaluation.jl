@@ -1,4 +1,4 @@
-# periodize.jl
+
 in_support(x, support::Tuple{T,T}) where {T} = support[1] <= x < support[2]
 
 function in_periodic_support(x, support::Tuple{T,T}...) where {T}

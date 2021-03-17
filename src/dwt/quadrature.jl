@@ -142,7 +142,7 @@ function Base.step(L::Int, h::InfiniteVector, x::InfiniteVector)
     y = zeros(ELT,L)
     for l in 0:L-1
         t = 0
-        for k in _firstindex(h):_lastindex(h)
+        for k in firstindex1(h):lastindex1(h)
             t += h[k]*x[k+2l]
         end
         y[l+1] = t
@@ -270,13 +270,13 @@ function shifted_conv(c1::CompactInfiniteVector{ELT}, c2::CompactInfiniteVector{
     l2 = sublength(c2)
     o1 = c1.offset
     o2 = c2.offset
-    offset = o1+shift*o2
+    offset = o1 .+ shift .* o2
     L = (l2-1)+shift*(l1-1)+1
     a = zeros(ELT, L)
     for ai in 0:L-1
         t = ELT(0)
         # for k in max(0,floor(Int,(firstindex(c1)-l2+1)//shift)):max(0,floor(Int,(lastindex(c1)+l2)//shift))
-        for k in _firstindex(c1):_lastindex(c1)
+        for k in firstindex1(c1):lastindex1(c1)
             t += c1[k]*c2[ai-shift*k]
         end
         a[ai+1] = t

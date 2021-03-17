@@ -1,4 +1,3 @@
-# dwtstep.jl
 
 using ..Filterbanks, ..Embeddings
 

@@ -1,7 +1,13 @@
-# discretewavelets.jl
+
 module DWT
+
 using InfiniteVectors, ..Filterbanks, ..Embeddings
 using InfiniteVectors: sublength, subvector, _firstindex, _lastindex
+
+# Fix for a weird tuple problem
+firstindex1(a) = _firstindex(a)[1]
+lastindex1(a) = _lastindex(a)[1]
+
 import ..Filterbanks: Filterbank
 import Base: eltype, filter
 import InfiniteVectors: support
@@ -81,4 +87,5 @@ print_all_implemented_wavelets() = println(map(name, ALL_IMPLEMENTED_WAVELETS))
 
 include("quadrature.jl")
 include("util/recipes.jl")
-end
+
+end # module

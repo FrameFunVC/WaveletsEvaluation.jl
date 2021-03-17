@@ -1,4 +1,3 @@
-# recursion.jl
 
 """
 The scaling function of a wavelet with filtercoeficients h evaluated in diadic points

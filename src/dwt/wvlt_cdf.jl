@@ -1,6 +1,8 @@
-# wvlt_cdf.jl
+
 using CardinalBSplines
+
 using CardinalBSplines: evaluate_BSpline, evaluate_periodic_BSpline
+
 "The Cohen-Daubechies-Feauveau family of compactly supported biorthogonal wavelets."
 struct CDFWavelet{P,Q,T} <: DiscreteWavelet{T}
 end
@@ -121,7 +123,7 @@ evaluate_periodic(side::Prl, kind::Wvl, w::CDFWavelet{N1,N2,T}, j::Int, k::Int, 
 function mother_relation(side::Side, w::DiscreteWavelet{T}, j::Int, k::Int, x::S; options...) where {T,S<:Real}
     flt = filter(side, Wvl(), w)
     res = T(0)
-    for l in  _firstindex(flt):_lastindex(flt)
+    for l in  firstindex1(flt):lastindex1(flt)
         res += flt[l]*evaluate(side, Scl(), w, j+1, 2k, x-l/(1<<(j+1)); options...)
     end
     res
@@ -130,7 +132,7 @@ end
 function mother_relation_periodic(side::Side, w::DiscreteWavelet{T}, j::Int, k::Int, x::S; options...) where {T,S<:Real}
     flt = filter(side, Wvl(), w)
     res = T(0)
-    for l in _firstindex(flt):_lastindex(flt)
+    for l in firstindex1(flt):lastindex1(flt)
         res += flt[l]*evaluate_periodic(side, Scl(), w, j+1, 2k, x-l/(1<<(j+1)); options...)
     end
     res

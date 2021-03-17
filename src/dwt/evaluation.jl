@@ -250,7 +250,7 @@ function evaluate_in_dyadic_points!(f::AbstractArray{T,1}, side::DWT.Side, kind:
         # and ψ_{j,k}(t_d) = ∑_n d_n ϕ_{j+1,k}(t_d-n)
         scratchlength = length(scratch)
         m = 1<<(d-1-j)
-        for (i,l) in enumerate(_firstindex(filter):_lastindex(filter))
+        for (i,l) in enumerate(firstindex1(filter):lastindex1(filter))
             offset = m*(i-1)
             f[offset+1:offset+scratchlength] += filter[l]*scratch
         end

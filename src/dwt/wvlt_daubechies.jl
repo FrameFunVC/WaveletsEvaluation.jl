@@ -1,6 +1,6 @@
 
 using LinearAlgebra
-# daubechies.jl
+
 struct DaubechiesWavelet{N,T} <: DiscreteWavelet{T}
 end
 

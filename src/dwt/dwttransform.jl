@@ -1,5 +1,3 @@
-# dwttransform.jl
-
 
 SFilterBank(s::Side, w::DiscreteWavelet, scaled=true) =
     scaled ?
